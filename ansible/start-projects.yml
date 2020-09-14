@@ -1,0 +1,20 @@
+- name: Start Project Docker
+  gather_facts: true
+  remote_user: root
+  hosts: all
+
+  tasks:
+    - name: Clone Repo Github
+      git:
+        repo: https://github.com/wiltoninfra/stack-monitoring.git
+        dest: /srv
+        version: master
+    
+    - name: Create Docker Network
+      docker_network:
+        name: frontend
+
+    - name: Start Project ENV_PROJECT docker-compose.yml
+      docker_compose:
+        project_src: /srv/
+

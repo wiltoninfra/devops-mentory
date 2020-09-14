@@ -1,0 +1,79 @@
+version: '3.3'
+services:
+
+
+# Monitoring
+  prometheus:
+      image: prom/prometheus
+      volumes:
+      - ./conf/prometheus/:/etc/prometheus/
+      - prometheus_data:/var/lib/prometheus
+      restart: always
+      links:
+        - cadvisor:cadvisor
+        - node-exporter:node-exporter
+      networks:
+       - stack-devops
+      ports:
+        - 9090:9090  
+
+  node-exporter:
+    image: quay.io/prometheus/node-exporter
+    hostname: node-exporter
+    volumes:
+      - /proc:/usr/proc
+      - /sys:/usr/sys
+      - /:/rootfs
+    networks:
+      - stack-devops
+    ports:
+      - 9100:9100
+
+  cadvisor:
+    image: google/cadvisor
+    hostname: cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - stack-devops
+    ports:
+      - 8080:8080
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    env_file:
+      - docker/conf/grafana/grafana.config
+    depends_on:
+      - prometheus      
+    networks:
+      - stack-devops
+
+  jenkins:
+    image: wilton/jenkins:2.60.3
+    environment:
+      JAVA_OPTS: "-Djava.awt.headless=true"
+    ports:
+      - "50000:50000"
+      - "8081:8080"
+    networks:
+      - stack-devops      
+    #volumes:
+    #  - /var/jenkins_home
+      
+networks:
+  stack-devops:
+    external: true
+
+volumes:
+    prometheus_data:
+    grafana_data:
+    jenkins_data:
